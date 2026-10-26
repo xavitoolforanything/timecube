@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChronoCube - Advanced Speedcubing Timer</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter & VT323 (for digital LCD display) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+    <style>
+        /* Base Styling & Custom Fonts */
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .lcd-font {
+            font-family: 'VT323', 'Share Tech Mono', monospace;
+        }
+
+        /* custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+        }
+
+        /* Stackmat Theme Styling Enclosures */
+        
+        /* 1. Default Dark */
+        .theme-dark {
+            --bg-main: #0f172a;
+            --bg-panel: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --timer-bg: #1e293b;
+            --timer-border: #334155;
+            --timer-digits: #38bdf8;
+            --timer-glow: rgba(56, 189, 248, 0.2);
+        }
+
+        /* 2. Default Light */
+        .theme-light {
+            --bg-main: #f1f5f9;
+            --bg-panel: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --accent: #2563eb;
+            --timer-bg: #ffffff;
+            --timer-border: #cbd5e1;
+            --timer-digits: #0f172a;
+            --timer-glow: rgba(0, 0, 0, 0.05);
+        }
+
+        /* 3. Stackmat G1 (Classic Blue/Gray, Blocky LCD) */
+        .theme-stackmat-g1 {
+            --bg-main: #1c1f26;
+            --bg-panel: #282c37;
+            --text-main: #e0e6ed;
+            --text-muted: #8899a6;
+            --accent: #3182ce;
+            --timer-bg: #9ea8b6;
+            --timer-border: #4a5568;
+            --timer-digits: #111827;
+            --timer-glow: inset 0 2px 6px rgba(0,0,0,0.6);
+            --bevel-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 4. Stackmat G2 (Metallic Gray, Green Backlight LCD) */
+        .theme-stackmat-g2 {
+            --bg-main: #18191c;
+            --bg-panel: #232529;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent: #10b981;
+            --timer-bg: #8ba888;
+            --timer-border: #374151;
+            --timer-digits: #062008;
+            --timer-glow: 0 0 15px rgba(16, 185, 129, 0.2);
+        }
+
+        /* 5. Stackmat G3 (Sleek Matte Black, Red LCD Accent) */
+        .theme-stackmat-g3 {
+            --bg-main: #090a0f;
+            --bg-panel: #13151f;
+            --text-main: #f3f4f6;
+            --text-muted: #6b7280;
+            --accent: #ef4444;
+            --timer-bg: #111111;
+            --timer-border: #ef4444;
+            --timer-digits: #ef4444;
+            --timer-glow: 0 0 20px rgba(239, 68, 68, 0.3);
+        }
+
+        /* 6. Stackmat G4 (Futuristic Cyan Neon Glow) */
+        .theme-stackmat-g4 {
+            --bg-main: #050b14;
+            --bg-panel: #0d192b;
+            --text-main: #e0f2fe;
+            --text-muted: #38bdf8;
+            --accent: #06b6d4;
+            --timer-bg: #021329;
+            --timer-border: #0284c7;
+            --timer-digits: #38bdf8;
+            --timer-glow: 0 0 25px rgba(56, 189, 248, 0.5);
+        }
+
+        /* 7. Stackmat G5 (Tournament Professional Gold/Black) */
+        .theme-stackmat-g5 {
+            --bg-main: #12100e;
+            --bg-panel: #1f1b16;
+            --text-main: #fef08a;
+            --text-muted: #a16207;
+            --accent: #eab308;
+            --timer-bg: #1a160d;
+            --timer-border: #ca8a04;
+            --timer-digits: #facc15;
+            --timer-glow: 0 0 20px rgba(250, 204, 21, 0.35);
+        }
+
+        .app-bg { background-color: var(--bg-main); color: var(--text-main); }
+        .panel-bg { background-color: var(--bg-panel); }
+        .timer-display-bg { 
+            background-color: var(--timer-bg); 
+            border-color: var(--timer-border); 
+            color: var(--timer-digits);
+            box-shadow: var(--timer-glow);
+        }
+
+        /* Ready/Timing dynamic override classes */
+        .timer-ready {
+            color: #22c55e !important;
+            text-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
+        }
+        .timer-holding {
+            color: #eab308 !important;
+            text-shadow: 0 0 20px rgba(234, 179, 8, 0.6);
+        }
+        .timer-inspection {
+            color: #f97316 !important;
+            text-shadow: 0 0 20px rgba(249, 115, 22, 0.6);
+        }
+        .timer-dnf {
+            color: #ef4444 !important;
+        }
+    </style>
+</head>
+<body class="app-bg theme-dark min-h-screen flex flex-col transition-colors duration-200">
+
+    <!-- TOP BAR / HEADER -->
+    <header class="panel-bg border-b border-gray-700/40 px-4 py-3 flex flex-wrap justify-between items-center gap-4 z-10">
+        <div class="flex items-center space-x-3">
+            <i class="fa-solid font-bold fa-cube text-blue-500 text-2xl"></i>
+            <h1 class="font-bold text-xl tracking-wide">ChronoCube</h1>
+            <span class="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 font-mono">v2.5</span>
+        </div>
+
+        <!-- Event Selection Selector -->
+        <div class="flex items-center space-x-2">
+            <label for="eventSelect" class="text-xs uppercase tracking-wider text-gray-400 font-semibold hidden sm:inline">Event:</label>
+            <select id="eventSelect" class="bg-gray-800 text-sm rounded-lg px-3 py-1.5 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="333">3x3x3 Cube</option>
+                <option value="222">2x2x2 Cube</option>
+                <option value="444">4x4x4 Cube</option>
+                <option value="555">5x5x5 Cube</option>
+                <option value="666">6x6x6 Cube</option>
+                <option value="777">7x7x7 Cube</option>
+                <option value="333bld">3x3 BLD</option>
+                <option value="333oh">3x3 One-Handed</option>
+                <option value="333fmc">3x3 FMC</option>
+                <option value="333mbf">3x3 Multi-BLD</option>
+                <option value="pyram">Pyraminx</option>
+                <option value="minx">Megaminx</option>
+                <option value="skewb">Skewb</option>
+                <option value="sq1">Square-1</option>
+                <option value="clock">Rubik's Clock</option>
+                <option value="floppy">Floppy Cube (2x2x3)</option>
+            </select>
+            <button id="nextScrambleBtn" title="Next Scramble (Space/Click)" class="p-2 hover:bg-gray-700/50 rounded-lg transition" onclick="app.generateNewScramble()">
+                <i class="fa-solid fa-arrows-rotate"></i>
+            </button>
+        </div>
+
+        <!-- Right Tools & Settings -->
+        <div class="flex items-center space-x-3">
+            <!-- Inspection Toggle -->
+            <button id="inspectionToggle" class="text-xs px-3 py-1.5 rounded-lg border border-gray-700 flex items-center space-x-1.5 transition hover:bg-gray-700/50" onclick="app.toggleInspection()">
+                <i class="fa-solid fa-stopwatch text-gray-400"></i>
+                <span>WCA Inspection: <strong id="inspectionStateText" class="text-red-400">OFF</strong></span>
+            </button>
+
+            <!-- Theme Selector -->
+            <select id="themeSelect" onchange="app.changeTheme(this.value)" class="bg-gray-800 text-xs rounded-lg px-2.5 py-1.5 border border-gray-700 focus:outline-none">
+                <optgroup label="Standard Themes">
+                    <option value="theme-dark">Default Dark</option>
+                    <option value="theme-light">Default Light</option>
+                </optgroup>
+                <optgroup label="Stackmat Hardware Themes">
+                    <option value="theme-stackmat-g1">Stackmat G1</option>
+                    <option value="theme-stackmat-g2">Stackmat G2</option>
+                    <option value="theme-stackmat-g3">Stackmat G3</option>
+                    <option value="theme-stackmat-g4">Stackmat G4</option>
+                    <option value="theme-stackmat-g5">Stackmat G5</option>
+                </optgroup>
+            </select>
+
+            <!-- Storage Modal Button -->
+            <button onclick="app.openModal('settingsModal')" class="p-2 hover:bg-gray-700/50 rounded-lg text-gray-300">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- SCRAMBLE DISPLAY PANEL -->
+    <div class="panel-bg border-b border-gray-700/30 py-4 px-6 text-center relative shadow-sm">
+        <div id="scrambleDisplay" class="text-lg md:text-xl font-mono font-medium tracking-wide leading-relaxed max-w-4xl mx-auto select-text break-words">
+            Loading scramble...
+        </div>
+    </div>
+
+    <!-- MAIN APP BODY CONTAINER -->
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 max-w-7xl mx-auto w-full">
+
+        <!-- LEFT SIDEBAR: SESSION HISTORY -->
+        <section class="lg:col-span-3 panel-bg rounded-xl border border-gray-700/30 p-4 flex flex-col h-[500px] lg:h-auto overflow-hidden">
+            <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-700/40">
+                <div class="flex items-center space-x-2">
+                    <select id="sessionSelect" onchange="app.switchSession(this.value)" class="bg-gray-800 text-xs rounded px-2 py-1 border border-gray-700 font-semibold">
+                        <!-- Populated dynamically -->
+                    </select>
+                    <button onclick="app.createNewSession()" title="New Session" class="text-xs bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+                <button onclick="app.clearCurrentSession()" class="text-xs text-red-400 hover:text-red-300" title="Clear Session Solves">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+
+            <!-- Solves List -->
+            <div id="solvesList" class="flex-1 overflow-y-auto space-y-1.5 pr-1 text-sm font-mono">
+                <!-- Solves injected dynamically -->
+            </div>
+        </section>
+
+        <!-- CENTER AREA: TIMER DISPLAY & VISUALIZER -->
+        <section class="lg:col-span-6 flex flex-col items-center justify-between space-y-6 py-4">
+            
+            <!-- TIMER HOUSING (STACKMAT HARDWARE EMULATION) -->
+            <div id="timerContainer" class="w-full flex flex-col items-center justify-center min-h-[280px] p-6 rounded-3xl border-4 transition-all duration-300 timer-display-bg relative">
+                
+                <!-- Inspection Banner Alert -->
+                <div id="inspectionStatus" class="hidden text-sm uppercase font-bold tracking-wider mb-2 animate-pulse">
+                    Inspection
+                </div>
+
+                <!-- Main Digit Timer -->
+                <div id="timerDigits" class="lcd-font text-7xl md:text-8xl lg:text-9xl tracking-tight font-bold transition-colors">
+                    0.000
+                </div>
+
+                <!-- Action Bar Below Timer -->
+                <div id="timerControls" class="flex items-center space-x-3 mt-6">
+                    <button onclick="app.applyPenaltyToCurrent('+2')" class="px-3 py-1 text-xs font-semibold rounded bg-gray-700/50 hover:bg-gray-600/50 transition border border-gray-600/40">+2</button>
+                    <button onclick="app.applyPenaltyToCurrent('DNF')" class="px-3 py-1 text-xs font-semibold rounded bg-gray-700/50 hover:bg-gray-600/50 transition border border-gray-600/40">DNF</button>
+                    <button onclick="app.deleteCurrentSolve()" class="px-3 py-1 text-xs font-semibold rounded bg-red-600/30 hover:bg-red-600/50 text-red-300 transition border border-red-500/40">Delete</button>
+                </div>
+
+                <!-- Instruction Subtext -->
+                <div class="absolute bottom-2 text-xs text-gray-500 font-sans tracking-wide">
+                    Hold [Space] or Touch to Ready
+                </div>
+            </div>
+
+            <!-- 2D SCRAMBLE VISUALIZER -->
+            <div class="panel-bg rounded-xl border border-gray-700/30 p-3 w-full flex flex-col items-center justify-center min-h-[160px]">
+                <div class="text-xs text-gray-400 mb-2 font-semibold">2D Scramble Visualizer</div>
+                <div id="visualizerContainer" class="flex items-center justify-center min-h-[100px] w-full">
+                    <!-- SVG Visualizer Rendered Here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- RIGHT SIDEBAR: STATISTICS & KEYBINDINGS -->
+        <section class="lg:col-span-3 panel-bg rounded-xl border border-gray-700/30 p-4 flex flex-col justify-between space-y-4">
+            <div>
+                <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 pb-2 border-b border-gray-700/40">Statistics</h3>
+                <div class="space-y-2 text-sm font-mono">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Solves Count:</span>
+                        <span id="statSolvesCount" class="font-bold">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Best Single:</span>
+                        <span id="statBestSingle" class="font-bold text-green-400">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Mean of 3 (mo3):</span>
+                        <span id="statMo3" class="font-bold">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Avg of 5 (ao5):</span>
+                        <span id="statAo5" class="font-bold text-blue-400">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Avg of 12 (ao12):</span>
+                        <span id="statAo12" class="font-bold">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Session Mean:</span>
+                        <span id="statSessionMean" class="font-bold">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Short Help / Keyboard Controls -->
+            <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/30 text-xs space-y-1.5">
+                <div class="font-bold text-gray-300 mb-1">Keyboard Controls</div>
+                <div class="flex justify-between"><span class="text-gray-400">Hold Space</span><span>Ready Timer</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Release Space</span><span>Start Timing</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Any Key</span><span>Stop Timer</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Alt + 2</span><span>Toggle +2 Penalty</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Alt + D</span><span>Toggle DNF</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Alt + R</span><span>Reset Scramble</span></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- DATA EXPORT/IMPORT SETTINGS MODAL -->
+    <div id="settingsModal" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 hidden">
+        <div class="panel-bg rounded-xl border border-gray-700 max-w-md w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-gray-700 pb-3">
+                <h3 class="text-lg font-bold">Data Management</h3>
+                <button onclick="app.closeModal('settingsModal')" class="text-gray-400 hover:text-white">&times;</button>
+            </div>
+            <p class="text-xs text-gray-400">Export your solve sessions to a JSON file or restore standard WCA solve histories.</p>
+            
+            <div class="flex flex-col space-y-2">
+                <button onclick="app.exportDataJSON()" class="w-full py-2 bg-blue-600 hover:bg-blue-500 rounded text-sm font-semibold transition">
+                    <i class="fa-solid fa-download mr-2"></i> Export Data (JSON)
+                </button>
+                <label class="w-full py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm font-semibold transition text-center cursor-pointer block">
+                    <i class="fa-solid fa-upload mr-2"></i> Import Data (JSON)
+                    <input type="file" id="importFileInput" onchange="app.importDataJSON(event)" class="hidden" accept=".json">
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUDIO SYNTHESIZER FOR WCA INSPECTION WARNINGS -->
+    <script>
+        /**
+         * Web Audio API Synthesizer for inspection warnings (8s, 12s)
+         */
+        class SoundFX {
+            constructor() {
+                this.ctx = null;
+            }
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+            beep(freq = 440, type = 'sine', duration = 0.15) {
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e) { console.error(e); }
+            }
+        }
+        const audioFX = new SoundFX();
+    </script>
+
+    <!-- WCA SCRAMBLER ENGINE MODULE -->
+    <script>
+        /**
+         * Move Generator and Valid State Random Scramblers for WCA Events
+         */
+        const ScramblerEngine = {
+            getRandomInt(min, max) {
+                return Math.floor(Math.random() * (max - min + 1)) + min;
+            },
+
+            // Standard 3x3 Generator
+            generate333(length = 21) {
+                const moves = ["U", "D", "L", "R", "F", "B"];
+                const modifiers = ["", "'", "2"];
+                let scramble = [];
+                let lastAxis = -1;
+
+                for (let i = 0; i < length; i++) {
+                    let axis;
+                    do {
+                        axis = this.getRandomInt(0, 5);
+                    } while (Math.floor(axis / 2) === Math.floor(lastAxis / 2));
+
+                    lastAxis = axis;
+                    const mod = modifiers[this.getRandomInt(0, 2)];
+                    scramble.push(moves[axis] + mod);
+                }
+                return scramble.join(" ");
+            },
+
+            // 2x2 Generator
+            generate222() {
+                const moves = ["U", "R", "F"];
+                const modifiers = ["", "'", "2"];
+                let scramble = [];
+                let lastMove = "";
+
+                for (let i = 0; i < 10; i++) {
+                    let move;
+                    do {
+                        move = moves[this.getRandomInt(0, 2)];
+                    } while (move === lastMove);
+
+                    lastMove = move;
+                    scramble.push(move + modifiers[this.getRandomInt(0, 2)]);
+                }
+                return scramble.join(" ");
+            },
+
+            // Big Cubes (4x4, 5x5, 6x6, 7x7)
+            generateBigCube(size) {
+                const moves = ["U", "D", "L", "R", "F", "B"];
+                const wideSuffixes = ["w", ""];
+                const modifiers = ["", "'", "2"];
+                const lenMap = { 4: 40, 5: 60, 6: 80, 7: 100 };
+                const length = lenMap[size] || 40;
+
+                let scramble = [];
+                let lastAxis = -1;
+
+                for (let i = 0; i < length; i++) {
+                    let axis;
+                    do {
+                        axis = this.getRandomInt(0, 5);
+                    } while (Math.floor(axis / 2) === Math.floor(lastAxis / 2));
+
+                    lastAxis = axis;
+                    let base = moves[axis];
+                    if (size > 3 && Math.random() > 0.5) {
+                        base += "w";
+                    }
+                    scramble.push(base + modifiers[this.getRandomInt(0, 2)]);
+                }
+                return scramble.join(" ");
+            },
+
+            // Pyraminx
+            generatePyraminx() {
+                const mainMoves = ["U", "L", "R", "B"];
+                const tips = ["u", "l", "r", "b"];
+                const modifiers = ["", "'"];
+                let scramble = [];
+
+                let lastMove = "";
+                for (let i = 0; i < 11; i++) {
+                    let move;
+                    do { move = mainMoves[this.getRandomInt(0, 3)]; } while (move === lastMove);
+                    lastMove = move;
+                    scramble.push(move + modifiers[this.getRandomInt(0, 1)]);
+                }
+
+                // Append tips randomly
+                tips.forEach(tip => {
+                    if (Math.random() > 0.4) {
+                        scramble.push(tip + modifiers[this.getRandomInt(0, 1)]);
+                    }
+                });
+                return scramble.join(" ");
+            },
+
+            // Skewb
+            generateSkewb() {
+                const moves = ["U", "R", "L", "B"];
+                const modifiers = ["", "'"];
+                let scramble = [];
+                let lastMove = "";
+
+                for (let i = 0; i < 10; i++) {
+                    let move;
+                    do { move = moves[this.getRandomInt(0, 3)]; } while (move === lastMove);
+                    lastMove = move;
+                    scramble.push(move + modifiers[this.getRandomInt(0, 1)]);
+                }
+                return scramble.join(" ");
+            },
+
+            // Megaminx
+            generateMegaminx() {
+                let lines = [];
+                for (let i = 0; i < 7; i++) {
+                    let line = [];
+                    for (let j = 0; j < 10; j++) {
+                        const move = (j % 2 === 0) ? "R" : "D";
+                        const sign = Math.random() > 0.5 ? "++" : "--";
+                        line.push(move + sign);
+                    }
+                    line.push("U" + (Math.random() > 0.5 ? "'" : ""));
+                    lines.push(line.join(" "));
+                }
+                return lines.join("\n");
+            },
+
+            // Square-1
+            generateSquare1() {
+                let scramble = [];
+                for (let i = 0; i < 12; i++) {
+                    let top = this.getRandomInt(-5, 6);
+                    let bot = this.getRandomInt(-5, 6);
+                    scramble.push(`(${top},${bot})`);
+                    if (i < 11) scramble.push("/");
+                }
+                return scramble.join(" ");
+            },
+
+            // Clock
+            generateClock() {
+                const pins = ["UR", "DR", "DL", "UL", "U", "R", "D", "L", "ALL"];
+                let scramble = [];
+                pins.forEach(pin => {
+                    const val = this.getRandomInt(-5, 6);
+                    const sign = val >= 0 ? "+" : "";
+                    scramble.push(`${pin}${sign}${val}`);
+                });
+                scramble.push("y2");
+                ["U", "R", "D", "L", "ALL"].forEach(pin => {
+                    const val = this.getRandomInt(-5, 6);
+                    const sign = val >= 0 ? "+" : "";
+                    scramble.push(`${pin}${sign}${val}`);
+                });
+                return scramble.join(" ");
+            },
+
+            // Floppy Cube (2x2x3)
+            generateFloppy() {
+                const moves = ["R", "L", "F", "B", "U", "D"];
+                let scramble = [];
+                for (let i = 0; i < 8; i++) {
+                    const m = moves[this.getRandomInt(0, moves.length - 1)];
+                    scramble.push(m + "2");
+                }
+                return scramble.join(" ");
+            },
+
+            // Main dispatch router
+            getScramble(eventId) {
+                switch (eventId) {
+                    case '222': return this.generate222();
+                    case '333': case '333oh': case '333bld': return this.generate333();
+                    case '444': return this.generateBigCube(4);
+                    case '555': return this.generateBigCube(5);
+                    case '666': return this.generateBigCube(6);
+                    case '777': return this.generateBigCube(7);
+                    case '333fmc': return "R' U' F " + this.generate333(18) + " R' U' F";
+                    case '333mbf': return this.generate333(18);
+                    case 'pyram': return this.generatePyraminx();
+                    case 'minx': return this.generateMegaminx();
+                    case 'skewb': return this.generateSkewb();
+                    case 'sq1': return this.generateSquare1();
+                    case 'clock': return this.generateClock();
+                    case 'floppy': return this.generateFloppy();
+                    default: return this.generate333();
+                }
+            }
+        };
+    </script>
+
+    <!-- SVG 2D VISUALIZER MODULE -->
+    <script>
+        /**
+         * SVG 2D Visualizer Component for Cube/Puzzle States
+         */
+        const VisualizerEngine = {
+            // Render 3x3 Net (Simplified graphic preview)
+            render3x3() {
+                const size = 18;
+                const gap = 1;
+                const colors = {
+                    U: '#ffffff', D: '#yellow', L: '#orange',
+                    R: '#red', F: '#green', B: '#blue'
+                };
+                
+                // standard net layout definition
+                return `
+                <svg width="180" height="135" viewBox="0 0 180 135" class="mx-auto drop-shadow">
+                    <!-- U Face -->
+                    <g transform="translate(45,0)">${this.renderFaceGrid(colors.U, size, gap)}</g>
+                    <!-- L Face -->
+                    <g transform="translate(0,45)">${this.renderFaceGrid('#f97316', size, gap)}</g>
+                    <!-- F Face -->
+                    <g transform="translate(45,45)">${this.renderFaceGrid('#22c55e', size, gap)}</g>
+                    <!-- R Face -->
+                    <g transform="translate(90,45)">${this.renderFaceGrid('#ef4444', size, gap)}</g>
+                    <!-- B Face -->
+                    <g transform="translate(135,45)">${this.renderFaceGrid('#3b82f6', size, gap)}</g>
+                    <!-- D Face -->
+                    <g transform="translate(45,90)">${this.renderFaceGrid('#eab308', size, gap)}</g>
+                </svg>`;
+            },
+
+            render2x2() {
+                return `
+                <svg width="120" height="90" viewBox="0 0 120 90" class="mx-auto drop-shadow">
+                    <g transform="translate(30,0)">${this.renderGrid(2, 2, '#ffffff', 14)}</g>
+                    <g transform="translate(0,30)">${this.renderGrid(2, 2, '#f97316', 14)}</g>
+                    <g transform="translate(30,30)">${this.renderGrid(2, 2, '#22c55e', 14)}</g>
+                    <g transform="translate(60,30)">${this.renderGrid(2, 2, '#ef4444', 14)}</g>
+                    <g transform="translate(90,30)">${this.renderGrid(2, 2, '#3b82f6', 14)}</g>
+                    <g transform="translate(30,60)">${this.renderGrid(2, 2, '#eab308', 14)}</g>
+                </svg>`;
+            },
+
+            renderPyraminx() {
+                return `
+                <svg width="120" height="100" viewBox="0 0 120 100" class="mx-auto">
+                    <polygon points="60,10 20,80 100,80" fill="#22c55e" stroke="#111" stroke-width="2"/>
+                    <polygon points="60,10 60,80 20,80" fill="#3b82f6" opacity="0.7"/>
+                    <polygon points="60,10 60,80 100,80" fill="#ef4444" opacity="0.7"/>
+                </svg>`;
+            },
+
+            renderGenericPlaceholder(text) {
+                return `<div class="text-xs text-gray-400 italic">${text} Preview Active</div>`;
+            },
+
+            renderFaceGrid(colorHex, size, gap) {
+                return this.renderGrid(3, 3, colorHex, size, gap);
+            },
+
+            renderGrid(rows, cols, colorHex, size, gap = 1) {
+                let rects = '';
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        rects += `<rect x="${c * (size + gap)}" y="${r * (size + gap)}" width="${size}" height="${size}" fill="${colorHex}" rx="2" stroke="#1e293b" stroke-width="1"/>`;
+                    }
+                }
+                return rects;
+            },
+
+            updateVisualizer(eventId) {
+                const container = document.getElementById('visualizerContainer');
+                if (!container) return;
+
+                if (['333', '333oh', '333bld', '333fmc'].includes(eventId)) {
+                    container.innerHTML = this.render3x3();
+                } else if (eventId === '222') {
+                    container.innerHTML = this.render2x2();
+                } else if (eventId === 'pyram') {
+                    container.innerHTML = this.renderPyraminx();
+                } else {
+                    container.innerHTML = this.renderGenericPlaceholder(eventId.toUpperCase());
+                }
+            }
+        };
+    </script>
+
+    <!-- CORE TIMER & APPLICATION LOGIC -->
+    <script>
+        /**
+         * Main ChronoCube Controller Application
+         */
+        class SpeedcubeTimerApp {
+            constructor() {
+                // Application State
+                this.currentEvent = '333';
+                this.currentScramble = '';
+                this.sessions = JSON.parse(localStorage.getItem('chronocube_sessions')) || { 'Session 1': [] };
+                this.activeSessionName = localStorage.getItem('chronocube_active_session') || 'Session 1';
+                this.theme = localStorage.getItem('chronocube_theme') || 'theme-dark';
+                
+                // Timing / WCA State Machine
+                this.timerState = 'IDLE'; // IDLE, HOLDING, READY, INSPECTION, TIMING
+                this.isInspectionEnabled = JSON.parse(localStorage.getItem('chronocube_inspection')) || false;
+                this.startTime = 0;
+                this.elapsedTime = 0;
+                this.timerInterval = null;
+                this.inspectionInterval = null;
+                this.inspectionSeconds = 15;
+                this.holdTimeout = null;
+
+                // DOM Cache
+                this.timerDigits = document.getElementById('timerDigits');
+                this.timerContainer = document.getElementById('timerContainer');
+                this.scrambleDisplay = document.getElementById('scrambleDisplay');
+                this.inspectionStatus = document.getElementById('inspectionStatus');
+                this.solvesList = document.getElementById('solvesList');
+            }
+
+            init() {
+                this.applyTheme(this.theme);
+                this.updateInspectionUI();
+                this.populateSessionSelect();
+                this.generateNewScramble();
+                this.attachEventListeners();
+                this.renderHistoryAndStats();
+            }
+
+            // Theme Switcher
+            changeTheme(themeName) {
+                this.theme = themeName;
+                localStorage.setItem('chronocube_theme', themeName);
+                this.applyTheme(themeName);
+            }
+
+            applyTheme(themeName) {
+                document.body.className = `app-bg ${themeName} min-h-screen flex flex-col transition-colors duration-200`;
+                document.getElementById('themeSelect').value = themeName;
+            }
+
+            // Inspection Toggle
+            toggleInspection() {
+                this.isInspectionEnabled = !this.isInspectionEnabled;
+                localStorage.setItem('chronocube_inspection', JSON.stringify(this.isInspectionEnabled));
+                this.updateInspectionUI();
+            }
+
+            updateInspectionUI() {
+                const text = document.getElementById('inspectionStateText');
+                if (text) {
+                    text.textContent = this.isInspectionEnabled ? 'ON' : 'OFF';
+                    text.className = this.isInspectionEnabled ? 'text-green-400 font-bold' : 'text-red-400 font-bold';
+                }
+            }
+
+            // Scramble Handling
+            generateNewScramble() {
+                this.currentScramble = ScramblerEngine.getScramble(this.currentEvent);
+                this.scrambleDisplay.textContent = this.currentScramble;
+                VisualizerEngine.updateVisualizer(this.currentEvent);
+            }
+
+            // High Precision Formatting (WCA Standard mm:ss.mmm)
+            formatTime(ms, penalty = '') {
+                if (penalty === 'DNF') return 'DNF';
+                let totalMs = ms;
+                if (penalty === '+2') totalMs += 2000;
+
+                const seconds = Math.floor(totalMs / 1000);
+                const remainderMs = Math.floor(totalMs % 1000);
+                const mins = Math.floor(seconds / 60);
+                const remSecs = seconds % 60;
+
+                const msStr = remainderMs.toString().padStart(3, '0');
+                if (mins > 0) {
+                    const secStr = remSecs.toString().padStart(2, '0');
+                    return `${mins}:${secStr}.${msStr}`;
+                } else {
+                    return `${remSecs}.${msStr}`;
+                }
+            }
+
+            // Event Listeners for Space / Touch Hold-to-Ready
+            attachEventListeners() {
+                document.getElementById('eventSelect').addEventListener('change', (e) => {
+                    this.currentEvent = e.target.value;
+                    this.generateNewScramble();
+                });
+
+                // Key listeners
+                window.addEventListener('keydown', (e) => this.handleKeyDown(e));
+                window.addEventListener('keyup', (e) => this.handleKeyUp(e));
+
+                // Touch listeners for mobile compatibility
+                this.timerContainer.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    this.triggerHoldStart();
+                }, { passive: false });
+
+                this.timerContainer.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.triggerHoldEnd();
+                }, { passive: false });
+            }
+
+            handleKeyDown(e) {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+
+                if (e.code === 'Space' && !e.repeat) {
+                    if (this.timerState === 'TIMING') {
+                        this.stopTimer();
+                    } else if (this.timerState === 'IDLE' || this.timerState === 'INSPECTION') {
+                        this.triggerHoldStart();
+                    }
+                } else if (this.timerState === 'TIMING') {
+                    this.stopTimer();
+                }
+
+                // Keyboard Shortcuts
+                if (e.altKey && e.code === 'KeyR') this.generateNewScramble();
+                if (e.altKey && e.code === 'Digit2') this.applyPenaltyToCurrent('+2');
+                if (e.altKey && e.code === 'KeyD') this.applyPenaltyToCurrent('DNF');
+            }
+
+            handleKeyUp(e) {
+                if (e.code === 'Space') {
+                    if (this.timerState === 'HOLDING' || this.timerState === 'READY') {
+                        this.triggerHoldEnd();
+                    }
+                }
+            }
+
+            triggerHoldStart() {
+                if (this.timerState === 'TIMING') return;
+
+                this.timerState = 'HOLDING';
+                this.timerDigits.className = 'lcd-font text-7xl md:text-8xl lg:text-9xl tracking-tight font-bold timer-holding';
+
+                // Must hold space for 300ms before becoming ready
+                this.holdTimeout = setTimeout(() => {
+                    if (this.timerState === 'HOLDING') {
+                        this.timerState = 'READY';
+                        this.timerDigits.className = 'lcd-font text-7xl md:text-8xl lg:text-9xl tracking-tight font-bold timer-ready';
+                    }
+                }, 300);
+            }
+
+            triggerHoldEnd() {
+                clearTimeout(this.holdTimeout);
+
+                if (this.timerState === 'READY') {
+                    if (this.isInspectionEnabled && this.timerState !== 'INSPECTION_READY') {
+                        this.startInspection();
+                    } else {
+                        this.startTiming();
+                    }
+                } else if (this.timerState === 'HOLDING') {
+                    // Released too early
+                    this.timerState = 'IDLE';
+                    this.resetTimerUI();
+                }
+            }
+
+            // WCA Inspection Phase Implementation
+            startInspection() {
+                this.timerState = 'INSPECTION';
+                this.inspectionSeconds = 15;
+                this.inspectionStatus.classList.remove('hidden');
+                this.inspectionStatus.textContent = 'INSPECTION';
+                this.timerDigits.textContent = this.inspectionSeconds;
+                this.timerDigits.className = 'lcd-font text-7xl md:text-8xl lg:text-9xl tracking-tight font-bold timer-inspection';
+
+                clearInterval(this.inspectionInterval);
+                this.inspectionInterval = setInterval(() => {
+                    this.inspectionSeconds--;
+                    this.timerDigits.textContent = this.inspectionSeconds;
+
+                    // Audio & Visual warnings at 8s (7 remaining) and 12s (3 remaining)
+                    if (this.inspectionSeconds === 7) {
+                        audioFX.beep(600, 'sine', 0.2); // 8 Seconds Callout
+                    } else if (this.inspectionSeconds === 3) {
+                        audioFX.beep(800, 'sine', 0.2); // 12 Seconds Callout
+                    } else if (this.inspectionSeconds <= 0 && this.inspectionSeconds > -2) {
+                        // +2 Penalty threshold
+                        this.inspectionStatus.textContent = "INSPECTION (+2)";
+                    } else if (this.inspectionSeconds <= -2) {
+                        // DNF Threshold (>17s)
+                        this.inspectionStatus.textContent = "INSPECTION (DNF)";
+                        this.timerDigits.textContent = "DNF";
+                        clearInterval(this.inspectionInterval);
+                    }
+                }, 1000);
+            }
+
+            startTiming() {
+                clearInterval(this.inspectionInterval);
+                this.inspectionStatus.classList.add('hidden');
+                this.timerState = 'TIMING';
+                this.startTime = performance.now();
+                
+                this.timerInterval = setInterval(() => {
+                    this.elapsedTime = performance.now() - this.startTime;
+                    this.timerDigits.textContent = this.formatTime(this.elapsedTime);
+                }, 10);
+            }
+
+            stopTimer() {
+                clearInterval(this.timerInterval);
+                const finalSolveTime = performance.now() - this.startTime;
+                
+                let penalty = '';
+                if (this.isInspectionEnabled) {
+                    if (this.inspectionSeconds <= -2) penalty = 'DNF';
+                    else if (this.inspectionSeconds <= 0) penalty = '+2';
+                }
+
+                this.timerState = 'IDLE';
+                this.saveSolve(finalSolveTime, penalty);
+                this.generateNewScramble();
+            }
+
+            resetTimerUI() {
+                this.timerDigits.className = 'lcd-font text-7xl md:text-8xl lg:text-9xl tracking-tight font-bold';
+            }
+
+            // Save Solve Record to Active Session
+            saveSolve(ms, penalty = '') {
+                const solve = {
+                    id: Date.now(),
+                    time: ms,
+                    penalty: penalty, // '', '+2', 'DNF'
+                    scramble: this.currentScramble,
+                    event: this.currentEvent,
+                    date: new Date().toISOString()
+                };
+
+                if (!this.sessions[this.activeSessionName]) {
+                    this.sessions[this.activeSessionName] = [];
+                }
+                this.sessions[this.activeSessionName].unshift(solve);
+                this.persistSessions();
+                this.renderHistoryAndStats();
+            }
+
+            persistSessions() {
+                localStorage.setItem('chronocube_sessions', JSON.stringify(this.sessions));
+                localStorage.setItem('chronocube_active_session', this.activeSessionName);
+            }
+
+            // WCA Statistics Calculations (ao5, ao12 drop highest/lowest with DNF logic)
+            calculateWCAAverage(solves, size) {
+                if (solves.length < size) return '-';
+                const currentChunk = solves.slice(0, size);
+                
+                let dnfCount = 0;
+                let parsedTimes = currentChunk.map(s => {
+                    if (s.penalty === 'DNF') {
+                        dnfCount++;
+                        return Infinity;
+                    }
+                    return s.time + (s.penalty === '+2' ? 2000 : 0);
+                });
+
+                if (dnfCount > 1) return 'DNF'; // WCA Rule: >1 DNF in ao5 results in DNF
+
+                parsedTimes.sort((a, b) => a - b);
+                parsedTimes.pop(); // Drop highest
+                parsedTimes.shift(); // Drop lowest
+
+                const sum = parsedTimes.reduce((acc, val) => acc + val, 0);
+                return this.formatTime(sum / (size - 2));
+            }
+
+            calculateMean(solves, size) {
+                if (solves.length < size) return '-';
+                const currentChunk = solves.slice(0, size);
+                let sum = 0;
+                for (let s of currentChunk) {
+                    if (s.penalty === 'DNF') return 'DNF';
+                    sum += s.time + (s.penalty === '+2' ? 2000 : 0);
+                }
+                return this.formatTime(sum / size);
+            }
+
+            renderHistoryAndStats() {
+                const solves = this.sessions[this.activeSessionName] || [];
+                
+                // Render Solves List
+                this.solvesList.innerHTML = '';
+                solves.forEach((solve, index) => {
+                    const el = document.createElement('div');
+                    el.className = 'flex justify-between items-center p-2 rounded bg-gray-800/40 border border-gray-700/30 hover:bg-gray-800/80 transition';
+                    const displayTime = this.formatTime(solve.time, solve.penalty);
+                    const solveNum = solves.length - index;
+
+                    el.innerHTML = `
+                        <div class="flex items-center space-x-2 overflow-hidden">
+                            <span class="text-xs text-gray-500 w-5">#${solveNum}</span>
+                            <span class="font-bold ${solve.penalty === 'DNF' ? 'text-red-400' : ''}">${displayTime}</span>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            <button onclick="app.toggleSolvePenalty(${solve.id}, '+2')" class="px-1.5 py-0.5 text-xs rounded bg-gray-700/50 hover:bg-gray-600 text-gray-300">+2</button>
+                            <button onclick="app.toggleSolvePenalty(${solve.id}, 'DNF')" class="px-1.5 py-0.5 text-xs rounded bg-gray-700/50 hover:bg-gray-600 text-gray-300">DNF</button>
+                            <button onclick="app.deleteSolve(${solve.id})" class="px-1.5 py-0.5 text-xs rounded text-red-400 hover:bg-red-500/20"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    `;
+                    this.solvesList.appendChild(el);
+                });
+
+                // Calculate Stats
+                document.getElementById('statSolvesCount').textContent = solves.length;
+
+                // Best Single
+                const validSolves = solves.filter(s => s.penalty !== 'DNF');
+                if (validSolves.length > 0) {
+                    const best = Math.min(...validSolves.map(s => s.time + (s.penalty === '+2' ? 2000 : 0)));
+                    document.getElementById('statBestSingle').textContent = this.formatTime(best);
+                } else {
+                    document.getElementById('statBestSingle').textContent = '-';
+                }
+
+                document.getElementById('statMo3').textContent = this.calculateMean(solves, 3);
+                document.getElementById('statAo5').textContent = this.calculateWCAAverage(solves, 5);
+                document.getElementById('statAo12').textContent = this.calculateWCAAverage(solves, 12);
+                document.getElementById('statSessionMean').textContent = this.calculateMean(solves, solves.length);
+            }
+
+            // Penalty & Solve Management Operations
+            toggleSolvePenalty(solveId, penaltyType) {
+                const solves = this.sessions[this.activeSessionName];
+                const solve = solves.find(s => s.id === solveId);
+                if (solve) {
+                    solve.penalty = (solve.penalty === penaltyType) ? '' : penaltyType;
+                    this.persistSessions();
+                    this.renderHistoryAndStats();
+                }
+            }
+
+            applyPenaltyToCurrent(penaltyType) {
+                const solves = this.sessions[this.activeSessionName];
+                if (solves && solves.length > 0) {
+                    this.toggleSolvePenalty(solves[0].id, penaltyType);
+                }
+            }
+
+            deleteSolve(solveId) {
+                this.sessions[this.activeSessionName] = this.sessions[this.activeSessionName].filter(s => s.id !== solveId);
+                this.persistSessions();
+                this.renderHistoryAndStats();
+            }
+
+            deleteCurrentSolve() {
+                const solves = this.sessions[this.activeSessionName];
+                if (solves && solves.length > 0) {
+                    this.deleteSolve(solves[0].id);
+                }
+            }
+
+            // Session Select & Creation
+            populateSessionSelect() {
+                const select = document.getElementById('sessionSelect');
+                select.innerHTML = '';
+                Object.keys(this.sessions).forEach(sess => {
+                    const opt = document.createElement('option');
+                    opt.value = sess;
+                    opt.textContent = sess;
+                    if (sess === this.activeSessionName) opt.selected = true;
+                    select.appendChild(opt);
+                });
+            }
+
+            switchSession(name) {
+                this.activeSessionName = name;
+                this.persistSessions();
+                this.renderHistoryAndStats();
+            }
+
+            createNewSession() {
+                const name = prompt('Enter new session name:', `Session ${Object.keys(this.sessions).length + 1}`);
+                if (name && !this.sessions[name]) {
+                    this.sessions[name] = [];
+                    this.activeSessionName = name;
+                    this.populateSessionSelect();
+                    this.persistSessions();
+                    this.renderHistoryAndStats();
+                }
+            }
+
+            clearCurrentSession() {
+                if (confirm(`Clear all solves in ${this.activeSessionName}?`)) {
+                    this.sessions[this.activeSessionName] = [];
+                    this.persistSessions();
+                    this.renderHistoryAndStats();
+                }
+            }
+
+            // Data Import/Export (JSON)
+            exportDataJSON() {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.sessions, null, 2));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `chronocube_backup_${Date.now()}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+            }
+
+            importDataJSON(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const importedSessions = JSON.parse(e.target.result);
+                        this.sessions = { ...this.sessions, ...importedSessions };
+                        this.persistSessions();
+                        this.populateSessionSelect();
+                        this.renderHistoryAndStats();
+                        this.closeModal('settingsModal');
+                    } catch (err) {
+                        alert('Invalid JSON File Format');
+                    }
+                };
+                reader.readAsText(file);
+            }
+
+            // Modal Controls
+            openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+            closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        }
+
+        // Initialize application on window load
+        let app;
+        window.onload = () => {
+            app = new SpeedcubeTimerApp();
+            app.init();
+        };
+    </script>
+</body>
+</html>
